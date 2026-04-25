@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data #сохранение бд - можно убрать эту строчку, и тогда бд каждый раз будет обнуляться до начального состояния
+  app:
+    image: eclipse-temurin:21-jre-alpine
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET_KEY}
+    volumes:
+       #куда и откуда переносятся файлы между докером\корневой папкой
+      - ./api.war:/app/api.war # архив со всеми исходниками сервера! 
+      - ./logs:/usr/local/tomcat/logs # логи - можно убрать, нужны только для дебага
+    working_dir: /app
+    command: java -jar api.war  
+    ports:
+      - "127.0.0.1:8080:8080"
+volumes:
+  db_data:
