@@ -1,2 +1,48 @@
-# android_l6_server
+# API Practice Server
 Более точная копия сервера для 6 лабы по андроиду. 
+
+## Требуемый софт для запуска
+Docker Compose (входит в Docker Desktop)
+
+## Инструкция по запуску:
+1. Клонировать репозиторий в любую папку (или скачать его как zip файл и распаковать)
+2. Найти файл env.example, скопировать его, изменить строчки ключей внутри (можно открыть в обычном блокноте) переименовать в .env 
+3. Скачать api.war из вкладки Releases (https://github.com/shelkovn/android_l6_server/releases) и поместить его в ту же папку
+4. Открыть терминал или PowerShell (<kbd>Win</kbd> + <kbd>X</kbd> > powershell)
+5. Переместиться в вашу папку (`cd C:/путь/к/вашей/папке`)
+6. Написать `docker-compose up -d`
+
+Готово! После успешного запуска сервер будет доступен по адресу 127.0.0.1:8080. 
+По завершению работы напишите в консоль `docker-compose down` или остановите контейнер в Docker Desktop
+
+## Примечание
+В базе данных, по умолчанию, не содержится никаких учеников, имеется только несколько групп. Рекомендуется зарегистрировать несколько учеников через запросы.
+
+Swagger UI доступен при открытии 127.0.0.1:8080 в браузере, но хочу заметить, что в силу некоторых недостатков в коде, которые я не имею возможности исправить, некоторые API, требующие авторизации, не помечены как таковые. Если вы хотите провести тест в Swagger и вам приходит ответ 401, можно действовать следующим образом:
+1. Выполнить любую команду регистрации или логина
+2. Скопировать токен из ответа
+3. Запустить скрипт в консоли страницы (<kbd>F12</kbd> > console), вставив в него ваш токен:
+```
+   (function() {
+    const token = "Bearer YOUR_TOKEN_HERE"; // <--- ЗАМЕНИТЬ НА СВОЙ
+
+    // перехватываем запрос  fetch
+    const oldFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = token;
+        return oldFetch(url, options);
+    };
+
+    // перехватываем XMLHttpRequest (его часто использует Swagger)
+    const oldOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function() {
+        this.addEventListener('loadstart', () => {
+            this.setRequestHeader('Authorization', token);
+        });
+        return oldOpen.apply(this, arguments);
+    };
+    console.log("Авторизация внедрена! Пробуй Execute.");
+    })();
+```
+После этого команды будут запускаться от имени авторизованного пользователя и ошибка 401 должна пропасть 
